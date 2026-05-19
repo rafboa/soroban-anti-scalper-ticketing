@@ -15,6 +15,19 @@ StellarPass replaces static QR codes and PDFs with **smart-contract-governed tic
 
 ---
 
+## Project Vision
+
+The live music and events industry loses billions every year to ticket scalping. Fans pay 3–10× face value. Artists and organisers see none of that money. Existing "anti-scalp" policies are enforced by humans and routinely circumvented by bots.
+
+StellarPass's vision is to make scalping **not a policy problem but a physics problem** — something the math of the blockchain makes impossible, not just against the rules.
+
+- **For fans**: guaranteed access to tickets at fair prices, with no fear of fraudulent or duplicated tickets
+- **For artists and organisers**: automated royalty income on every secondary sale, instant settlement, no intermediaries
+- **For the industry**: a trustless ticketing layer that any event platform can build on top of, without relying on centralised gatekeepers
+- **Long term**: a world where your ticket lives in your wallet alongside your identity — transferable, verifiable, and always fairly priced, whether you're attending a local gig or a global stadium tour
+
+---
+
 ## Key Features
 
 ### 1. On-Chain Price Caps
@@ -151,13 +164,13 @@ soroban contract invoke \
 
 ## Contract API
 
-| Function | Signer | Description |
-|----------|--------|-------------|
-| `initialize(admin, face_value, max_resale_multiplier, royalty_basis_points, royalty_recipient)` | Admin | One-time event setup |
-| `mint_ticket(ticket_id, to)` | Admin | Issue a new ticket token |
-| `transfer_ticket(ticket_id, from, to, amount, token_addr)` | Seller | Transfer with price cap + royalty split |
-| `check_in(ticket_id, owner)` | Ticket holder | Mark used at the gate — permanent |
-| `get_ticket(ticket_id)` | — | Read-only state query |
+| Function | Signer | Permission | Description |
+|----------|--------|------------|-------------|
+| `initialize(admin, face_value, max_resale_multiplier, royalty_basis_points, royalty_recipient)` | Admin | One-time only | Set up event config |
+| `mint_ticket(ticket_id, to)` | Admin | Admin only | Issue a new ticket token |
+| `transfer_ticket(ticket_id, from, to, amount, token_addr)` | Seller | Owner of ticket | Transfer with price cap + royalty split |
+| `check_in(ticket_id, owner)` | Ticket holder | Owner of ticket | Mark used at the gate — permanent |
+| `get_ticket(ticket_id)` | — | Public | Read-only state query |
 
 ---
 
@@ -174,6 +187,53 @@ soroban contract invoke \
 
 ---
 
+## Test Coverage
+
+The contract includes 7 hermetic unit tests using `soroban-sdk`'s mock environment — no live network required:
+
+| # | Test | Validates |
+|---|------|-----------|
+| 1 | `test_secondary_transfer_legal_price_succeeds` | Correct balance splits for buyer, seller, and royalty wallet after a legal secondary sale |
+| 2 | `test_scalper_blocked_price_above_ceiling` | Contract panics when resale price exceeds the 110% ceiling |
+| 3 | `test_check_in_marks_ticket_as_used` | `is_used` is permanently set to `true` after gate scan |
+| 4 | `test_used_ticket_cannot_be_transferred` | Transfer of a used ticket is rejected |
+| 5 | `test_used_ticket_cannot_be_checked_in_again` | Double check-in on the same ticket is rejected |
+| 6 | `test_double_initialize_panics` | Contract cannot be initialized a second time |
+| 7 | `test_non_owner_cannot_transfer` / `test_duplicate_mint_panics` / `test_get_ticket_returns_none` | Edge cases: wrong owner, duplicate mint, unknown ticket ID |
+
+---
+
+## Future Scope
+
+### Short-Term
+
+1. **Event Metadata**: Add title, venue, date, and seat number fields to each ticket record
+2. **Batch Minting**: Allow the admin to mint multiple tickets in a single transaction for efficiency
+3. **Configurable Royalty per Event**: Support different royalty rates for different event types
+4. **Ticket Expiry**: Auto-invalidate tickets after the event date using Soroban's ledger timestamp
+
+### Medium-Term
+
+5. **Multi-Event Support**: Deploy a single factory contract that manages multiple events independently
+6. **Whitelist / KYC**: Restrict ticket purchases to pre-approved wallet addresses for high-demand events
+7. **Refund Mechanism**: Allow the admin to trigger refunds before an event, returning tokens to buyers
+8. **On-Chain Event Log**: Emit contract events for every mint, transfer, and check-in for real-time indexing
+
+### Long-Term
+
+9. **Frontend DApp**: Complete the Next.js interface with Freighter wallet integration, ticket gallery, and resale portal
+10. **Mobile Wallet SDK**: Native iOS and Android SDKs so attendees can store and present tickets from their phone
+11. **Cross-Contract Composability**: Allow DeFi protocols to use ticket ownership as collateral or for governance
+12. **Zero-Knowledge Check-In**: Private gate entry where the holder proves ownership without revealing their wallet address
+13. **DAO Governance**: Let ticket holders vote on event decisions (setlist, venue, charity donations) proportional to tickets held
+14. **Mainnet Launch**: Deploy to Stellar mainnet with a real payment token (USDC or XLM) and partner with an event organiser
+
+---
+
 ## License
 
 MIT — see [LICENSE](./LICENSE).
+
+---
+
+**StellarPass** — Fair Tickets, On-Chain. No Bots. No Fraud. No Excuses. 🎟️✦
