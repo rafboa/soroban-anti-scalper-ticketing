@@ -11,10 +11,10 @@
 
 import { useState } from "react";
 import { useWallet } from "@/lib/useWallet";
-import { ContractClient } from "@/lib/ContractClient";
-import TicketGallery from "@/components/TicketGallery";
-import ResalePortal from "@/components/ResalePortal";
-import CheckInQR from "@/components/CheckInQR";
+import { ContractClient } from "@/lib/contractclient";
+import TicketGallery from "@/components/ticketgallery";
+import ResalePortal from "@/components/resaleportal";
+import CheckInQR from "@/components/checkinportal";
 import { Keypair } from "@stellar/stellar-sdk";
 
 // ── Environment config (set in .env.local) ─────────────────────────────────
