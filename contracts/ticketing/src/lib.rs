@@ -12,7 +12,7 @@
 #![no_std]
 
 use soroban_sdk::{
-    contract, contractimpl, contracttype, contracterror,
+    contract, contractimpl, contracttype, contracterror, panic_with_error,
     token::Client as TokenClient,
     Address, Env,
 };

@@ -38,8 +38,26 @@ Gate entry requires the ticket holder to **co-sign the check-in transaction** wi
 
 | Network  | Contract ID                      |
 |----------|----------------------------------|
-| Testnet  | `[Insert Deployed Testnet ID Here]` |
+| Testnet  | `CD642DOEAS62BGI7XMONDXLX5XSSKM6GPBJK22EO3RSHFW5UNW4VA6BA` |
 | Mainnet  | `[Not yet deployed]`             |
+
+**Testnet links:**
+- [View on Stellar Expert](https://stellar.expert/explorer/testnet/contract/CD642DOEAS62BGI7XMONDXLX5XSSKM6GPBJK22EO3RSHFW5UNW4VA6BA)
+- [Open in Stellar Lab](https://lab.stellar.org/r/testnet/contract/CD642DOEAS62BGI7XMONDXLX5XSSKM6GPBJK22EO3RSHFW5UNW4VA6BA)
+
+**Wasm hash:** `3e5d8721f15f235d7200b2ae680760ddb6018d4ba4a62bb422d25e46ae8e39f0`
+
+### Contract Configuration
+
+| Parameter              | Value                                                        |
+|------------------------|--------------------------------------------------------------|
+| Admin / Royalty Wallet | `GAG27SIQ3K3P7F46UNNSQUX5LSVRHRWEPVQS2CSKNBY73VBPACEVAIGI` |
+| Face Value             | 100 stroops                                                  |
+| Max Resale Multiplier  | 110% of face value (ceiling = 110 stroops)                   |
+| Royalty                | 5% (500 basis points) per secondary sale                     |
+| Network                | Stellar Testnet                                              |
+
+- [View Admin Account on Stellar Expert](https://stellar.expert/explorer/testnet/account/GAG27SIQ3K3P7F46UNNSQUX5LSVRHRWEPVQS2CSKNBY73VBPACEVAIGI)
 
 ---
 
