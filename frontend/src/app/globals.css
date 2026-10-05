@@ -1,19 +1,12 @@
-/* ─────────────────────────────────────────────────────────────────────────────
-   StellarPass Global Styles
-   Aesthetic: Industrial minimal — dark steel base, sharp amber accent,
-   monospaced type, ruled lines, no rounded corners, no gradients.
-   ───────────────────────────────────────────────────────────────────────────── */
-
 @import url('https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Syne:wght@400;600;800&display=swap');
 
-/* ── CSS Variables ─────────────────────────────────────────────────────────── */
 :root {
   --bg:           #0c0d0f;
   --surface:      #141519;
   --surface-2:    #1d1f25;
-  --border:       #2a2d35;
+  --border:       #3c404b;
   --text:         #e8e9ec;
-  --text-muted:   #6b7080;
+  --text-muted:   #989eb0;
   --accent:       #f5a623;
   --accent-dim:   #8a5d12;
   --success:      #3ecf8e;
@@ -24,10 +17,15 @@
   --radius:       0px;
 }
 
-/* ── Reset ─────────────────────────────────────────────────────────────────── */
-*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+*, *::before, *::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
 
-html { font-size: 16px; }
+html {
+  font-size: 16px;
+}
 
 body {
   background:  var(--bg);
@@ -38,29 +36,43 @@ body {
   min-height:   100vh;
 }
 
-/* ── Typography ────────────────────────────────────────────────────────────── */
+/* Accessible focus ring for keyboard navigation (WCAG 2.4.7 / R-32) */
+:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
 h1, h2, h3 {
   font-family:   var(--font-display);
   font-weight:   800;
   letter-spacing: -0.02em;
   line-height:   1.1;
 }
+
 h1 { font-size: clamp(2rem, 5vw, 3.5rem); }
 h2 { font-size: 1.25rem; text-transform: uppercase; letter-spacing: 0.08em; }
 
-code { font-family: var(--font-mono); color: var(--accent); font-size: 0.8em; }
+code {
+  font-family: var(--font-mono);
+  color: var(--accent);
+  font-size: 0.8em;
+}
 
-a { color: var(--accent); text-decoration: none; }
-a:hover { text-decoration: underline; }
+a {
+  color: var(--accent);
+  text-decoration: none;
+}
 
-/* ── Layout ────────────────────────────────────────────────────────────────── */
+a:hover {
+  text-decoration: underline;
+}
+
 .app {
   max-width:  960px;
   margin:     0 auto;
   padding:    0 1.5rem 4rem;
 }
 
-/* ── Header ────────────────────────────────────────────────────────────────── */
 .app-header {
   display:         flex;
   align-items:     center;
@@ -75,23 +87,43 @@ a:hover { text-decoration: underline; }
   align-items: center;
   gap:         0.5rem;
 }
-.logo-star { color: var(--accent); font-size: 1.4rem; animation: spin 12s linear infinite; }
-.logo-text { font-family: var(--font-display); font-weight: 800; font-size: 1.2rem; }
 
-@keyframes spin { to { transform: rotate(360deg); } }
+.logo-star {
+  color: var(--accent);
+  font-size: 1.4rem;
+}
 
-.wallet-badge { display: flex; align-items: center; gap: 1rem; }
-.wallet-addr  { color: var(--text-muted); font-size: 0.8rem; }
+.logo-text {
+  font-family: var(--font-display);
+  font-weight: 800;
+  font-size: 1.2rem;
+}
 
-/* ── Connect Prompt ────────────────────────────────────────────────────────── */
+.wallet-badge {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.wallet-addr {
+  color: var(--text-muted);
+  font-size: 0.8rem;
+}
+
 .connect-prompt {
   padding:       4rem 0;
   border-bottom: var(--rule);
 }
-.connect-prompt h1 { margin-bottom: 1rem; }
-.connect-prompt p  { color: var(--text-muted); max-width: 480px; }
 
-/* ── Tab Navigation ────────────────────────────────────────────────────────── */
+.connect-prompt h1 {
+  margin-bottom: 1rem;
+}
+
+.connect-prompt p {
+  color: var(--text-muted);
+  max-width: 480px;
+}
+
 .tab-nav {
   display:       flex;
   gap:           0;
@@ -112,11 +144,19 @@ a:hover { text-decoration: underline; }
   text-transform: uppercase;
   transition:    color 0.15s, border-color 0.15s;
 }
-.tab-btn:hover             { color: var(--text); }
-.tab-btn--active           { border-bottom-color: var(--accent); color: var(--accent); }
 
-/* ── Ticket Gallery ────────────────────────────────────────────────────────── */
-.gallery h2            { margin-bottom: 1.5rem; }
+.tab-btn:hover {
+  color: var(--text);
+}
+
+.tab-btn--active {
+  border-bottom-color: var(--accent);
+  color: var(--accent);
+}
+
+.gallery h2 {
+  margin-bottom: 1.5rem;
+}
 
 .ticket-grid {
   display:               grid;
@@ -132,8 +172,15 @@ a:hover { text-decoration: underline; }
   position:    relative;
   transition:  background 0.15s;
 }
-.ticket-card:hover              { background: var(--surface-2); }
-.ticket-card--used              { opacity: 0.5; }
+
+.ticket-card:hover {
+  background: var(--surface-2);
+}
+
+.ticket-card--used {
+  opacity: 0.6;
+}
+
 .ticket-card--used::after {
   content:     "USED";
   position:    absolute;
@@ -154,9 +201,22 @@ a:hover { text-decoration: underline; }
   align-items:     center;
   margin-bottom:   0.75rem;
 }
+
+.ticket-card__title  { font-family: var(--font-display); font-size: 0.95rem; font-weight: 600; }
 .ticket-card__id     { font-family: var(--font-display); font-size: 1.1rem; font-weight: 800; }
 .status-valid        { color: var(--success); font-size: 0.7rem; letter-spacing: 0.1em; }
 .status-used         { color: var(--text-muted); font-size: 0.7rem; letter-spacing: 0.1em; }
+.status-refunded     { color: var(--danger); font-size: 0.7rem; letter-spacing: 0.1em; }
+
+.ticket-card__metadata {
+  font-size: 0.75rem;
+  color: var(--text-muted);
+  margin-bottom: 0.75rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+}
+
 .ticket-card__owner  { font-size: 0.75rem; color: var(--text-muted); }
 .ticket-card__owner .label { display: block; text-transform: uppercase; letter-spacing: 0.1em; font-size: 0.65rem; margin-bottom: 0.2rem; }
 
@@ -166,7 +226,6 @@ a:hover { text-decoration: underline; }
 }
 .gallery-empty .hint { font-size: 0.75rem; margin-top: 0.5rem; }
 
-/* ── Resale Portal ─────────────────────────────────────────────────────────── */
 .resale-portal { max-width: 480px; }
 .resale-portal h2 { margin-bottom: 0.5rem; }
 .resale-portal .hint { color: var(--text-muted); margin-bottom: 2rem; font-size: 0.8rem; }
@@ -189,12 +248,17 @@ a:hover { text-decoration: underline; }
   color:        var(--text);
   font-family:  var(--font-mono);
   font-size:    0.875rem;
-  outline:      none;
   padding:      0.6rem 0.75rem;
   transition:   border-color 0.15s;
 }
-.form-group input:focus      { border-color: var(--accent); }
-.form-group input[aria-invalid="true"] { border-color: var(--danger); }
+.form-group input:focus-visible {
+  border-color: var(--accent);
+  outline: 2px solid var(--accent);
+  outline-offset: 1px;
+}
+.form-group input[aria-invalid="true"] {
+  border-color: var(--danger);
+}
 
 .field-error { color: var(--danger); }
 
@@ -213,7 +277,6 @@ a:hover { text-decoration: underline; }
   font-size:   0.8rem;
 }
 
-/* ── Check-In QR ───────────────────────────────────────────────────────────── */
 .checkin-qr { max-width: 400px; }
 .checkin-qr h2 { margin-bottom: 0.5rem; }
 .checkin-qr .hint { color: var(--text-muted); margin-bottom: 2rem; font-size: 0.8rem; }
@@ -225,7 +288,6 @@ a:hover { text-decoration: underline; }
 .qr-expired, .qr-error { display: flex; flex-direction: column; gap: 1rem; color: var(--text-muted); padding: 1rem 0; }
 .qr-error { color: var(--danger); }
 
-/* ── Buttons ───────────────────────────────────────────────────────────────── */
 .btn-primary {
   background:     var(--accent);
   border:         none;
@@ -267,7 +329,6 @@ a:hover { text-decoration: underline; }
 }
 .btn-ghost:hover { color: var(--text); }
 
-/* ── Misc ──────────────────────────────────────────────────────────────────── */
 .notice {
   background:  var(--surface-2);
   border:      var(--rule);
@@ -275,6 +336,14 @@ a:hover { text-decoration: underline; }
   color:       var(--text-muted);
   font-size:   0.8rem;
   padding:     1rem 1.25rem;
+}
+
+.dev-badge {
+  background: var(--surface-2);
+  border: var(--rule);
+  color: var(--accent);
+  font-size: 0.7rem;
+  padding: 0.2rem 0.5rem;
 }
 
 .wallet-error {
@@ -286,7 +355,6 @@ a:hover { text-decoration: underline; }
   padding:     0.75rem 1rem;
 }
 
-/* ── Spinner ───────────────────────────────────────────────────────────────── */
 .spinner {
   width:  16px;
   height: 16px;
@@ -296,4 +364,11 @@ a:hover { text-decoration: underline; }
   display: inline-block;
   animation: rotate 0.8s linear infinite;
 }
+
+@media (prefers-reduced-motion: reduce) {
+  .spinner {
+    animation-duration: 2s;
+  }
+}
+
 @keyframes rotate { to { transform: rotate(360deg); } }

@@ -1,0 +1,25 @@
+# Internal confidential architecture documentation (Do not commit to public)
+INTERNAL_SYSTEM_ARCHITECTURE.md
+
+# Rust & Cargo build artifacts
+target/
+**/*.rs.bk
+contracts/ticketing/test_snapshots/
+
+# Node & Next.js
+node_modules/
+frontend/node_modules/
+.next/
+frontend/.next/
+frontend/tsconfig.tsbuildinfo
+
+# Environment & Local Secrets
+.env
+.env*.local
+frontend/.env*.local
+*.pem
+*.key
+
+# OS metadata
+.DS_Store
+Thumbs.db

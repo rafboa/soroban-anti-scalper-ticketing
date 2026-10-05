@@ -1,63 +1,65 @@
-/**
- * ContractClient
- * ──────────────
- * Thin wrapper around @stellar/stellar-sdk that encodes / decodes
- * StellarPass contract invocations and handles transaction submission.
- *
- * Usage:
- *   const client = new ContractClient(contractId, rpcUrl, networkPassphrase);
- *   const ticket = await client.getTicket(ticketId);
- */
-
 import {
-  Contract,
-  Keypair,
-  Networks,
-  nativeToScVal,
-  scValToNative,
   SorobanRpc,
   TransactionBuilder,
-  BASE_FEE,
   xdr,
+  scValToNative,
+  nativeToScVal,
+  Contract,
+  Keypair,
+  Transaction,
 } from "@stellar/stellar-sdk";
 
-// ─────────────────────────────────────────────────────────────────────────────
-// Types mirroring the on-chain TicketRecord struct
-// ─────────────────────────────────────────────────────────────────────────────
+const BASE_FEE = "100000";
 
 export interface TicketRecord {
-  owner: string;
-  is_used: boolean;
+  owner:                   string;
+  is_used:                 boolean;
+  is_refunded:             boolean;
+  title:                   string;
+  venue:                   string;
+  date:                    number;
+  seat:                    string;
+  last_transfer_timestamp: number;
+}
+
+export interface EventConfig {
+  admin:                     string;
+  payment_token:             string;
+  face_value:                bigint;
+  max_resale_multiplier:     number;
+  royalty_basis_points:      number;
+  royalty_recipient:         string;
+  whitelist_enabled:         boolean;
+  max_supply:                number;
+  current_supply:            number;
+  max_tickets_per_wallet:    number;
+  transfer_cooldown_seconds: bigint;
+  is_paused:                 boolean;
 }
 
 export interface TransferParams {
-  ticketId: number;
-  from: string;
-  to: string;
-  amount: bigint;
+  eventId:      number;
+  ticketId:     number;
+  from:         string;
+  to:           string;
+  amount:       bigint;
   tokenAddress: string;
 }
-
-// ─────────────────────────────────────────────────────────────────────────────
-// Network presets
-// ─────────────────────────────────────────────────────────────────────────────
 
 export const NETWORKS = {
   testnet: {
     rpcUrl:            "https://soroban-testnet.stellar.org",
-    networkPassphrase: Networks.TESTNET,
+    networkPassphrase: "Test SDF Network ; September 2015",
   },
   mainnet: {
     rpcUrl:            "https://mainnet.sorobanrpc.com",
-    networkPassphrase: Networks.PUBLIC,
+    networkPassphrase: "Public Global Stellar Network ; September 2015",
   },
 } as const;
 
 export type NetworkName = keyof typeof NETWORKS;
 
-// ─────────────────────────────────────────────────────────────────────────────
-// ContractClient
-// ─────────────────────────────────────────────────────────────────────────────
+export type SignFunction = (xdr: string) => Promise<string>;
 
 export class ContractClient {
   private contract:          Contract;
@@ -74,28 +76,35 @@ export class ContractClient {
     this.networkPassphrase = networkPassphrase;
   }
 
-  // ── Factory for named networks ────────────────────────────────────────────
-
   static forNetwork(contractId: string, network: NetworkName): ContractClient {
     const { rpcUrl, networkPassphrase } = NETWORKS[network];
     return new ContractClient(contractId, rpcUrl, networkPassphrase);
   }
 
-  // ── Read-only helpers ──────────────────────────────────────────────────────
-
-  /**
-   * Fetch the current owner and usage state for a ticket.
-   * Returns `null` if the ticket does not exist on-chain.
-   */
-  async getTicket(ticketId: number): Promise<TicketRecord | null> {
+  async getTicket(eventId: number, ticketId: number): Promise<TicketRecord | null> {
     const operation = this.contract.call(
       "get_ticket",
+      nativeToScVal(eventId, { type: "u32" }),
       nativeToScVal(ticketId, { type: "u32" }),
     );
 
-    const result = await this.server.simulateTransaction(
-      await this._buildTx(operation),
-    );
+    const dummyKeypair = Keypair.random();
+    let account;
+    try {
+      account = await this.server.getAccount(dummyKeypair.publicKey());
+    } catch {
+      account = { id: dummyKeypair.publicKey(), sequence: "0" } as any;
+    }
+
+    const tx = new TransactionBuilder(account, {
+      fee: BASE_FEE,
+      networkPassphrase: this.networkPassphrase,
+    })
+      .addOperation(operation)
+      .setTimeout(30)
+      .build();
+
+    const result = await this.server.simulateTransaction(tx);
 
     if (SorobanRpc.Api.isSimulationError(result)) {
       throw new Error(`Simulation error: ${result.error}`);
@@ -108,24 +117,94 @@ export class ContractClient {
       return null;
     }
 
-    const native = scValToNative(returnVal) as { owner: string; is_used: boolean };
-    return { owner: native.owner, is_used: native.is_used };
+    return scValToNative(returnVal) as TicketRecord;
   }
 
-  // ── Signed transaction builders ───────────────────────────────────────────
+  async getEvent(eventId: number): Promise<EventConfig | null> {
+    const operation = this.contract.call(
+      "get_event",
+      nativeToScVal(eventId, { type: "u32" }),
+    );
 
-  /**
-   * Build, simulate, sign, and submit a `transfer_ticket` transaction.
-   *
-   * The caller must supply a Keypair for the `from` account (the seller).
-   * The buyer must have already set a token allowance for this contract.
-   */
+    const dummyKeypair = Keypair.random();
+    let account;
+    try {
+      account = await this.server.getAccount(dummyKeypair.publicKey());
+    } catch {
+      account = { id: dummyKeypair.publicKey(), sequence: "0" } as any;
+    }
+
+    const tx = new TransactionBuilder(account, {
+      fee: BASE_FEE,
+      networkPassphrase: this.networkPassphrase,
+    })
+      .addOperation(operation)
+      .setTimeout(30)
+      .build();
+
+    const result = await this.server.simulateTransaction(tx);
+
+    if (SorobanRpc.Api.isSimulationError(result)) {
+      throw new Error(`Simulation error: ${result.error}`);
+    }
+
+    const returnVal = (result as SorobanRpc.Api.SimulateTransactionSuccessResponse)
+      .result?.retval;
+
+    if (!returnVal || returnVal.switch() === xdr.ScValType.scvVoid()) {
+      return null;
+    }
+
+    return scValToNative(returnVal) as EventConfig;
+  }
+
+  async getUserTicketBalance(eventId: number, userAddress: string): Promise<number> {
+    const operation = this.contract.call(
+      "get_user_ticket_balance",
+      nativeToScVal(eventId,     { type: "u32"     }),
+      nativeToScVal(userAddress, { type: "address" }),
+    );
+
+    const dummyKeypair = Keypair.random();
+    let account;
+    try {
+      account = await this.server.getAccount(dummyKeypair.publicKey());
+    } catch {
+      account = { id: dummyKeypair.publicKey(), sequence: "0" } as any;
+    }
+
+    const tx = new TransactionBuilder(account, {
+      fee: BASE_FEE,
+      networkPassphrase: this.networkPassphrase,
+    })
+      .addOperation(operation)
+      .setTimeout(30)
+      .build();
+
+    const result = await this.server.simulateTransaction(tx);
+
+    if (SorobanRpc.Api.isSimulationError(result)) {
+      throw new Error(`Simulation error: ${result.error}`);
+    }
+
+    const returnVal = (result as SorobanRpc.Api.SimulateTransactionSuccessResponse)
+      .result?.retval;
+
+    if (!returnVal || returnVal.switch() === xdr.ScValType.scvVoid()) {
+      return 0;
+    }
+
+    return scValToNative(returnVal) as number;
+  }
+
   async transferTicket(
-    params:     TransferParams,
-    signerKeys: Keypair,
+    params: TransferParams,
+    publicKey: string,
+    signFn: SignFunction,
   ): Promise<string> {
     const operation = this.contract.call(
       "transfer_ticket",
+      nativeToScVal(params.eventId,       { type: "u32"     }),
       nativeToScVal(params.ticketId,      { type: "u32"     }),
       nativeToScVal(params.from,          { type: "address" }),
       nativeToScVal(params.to,            { type: "address" }),
@@ -133,50 +212,34 @@ export class ContractClient {
       nativeToScVal(params.tokenAddress,  { type: "address" }),
     );
 
-    return this._signAndSubmit(operation, signerKeys);
+    return this._signAndSubmit(operation, publicKey, signFn);
   }
 
-  /**
-   * Build, simulate, sign, and submit a `check_in` transaction.
-   * The holder's Keypair is required to satisfy `owner.require_auth()`.
-   */
   async checkIn(
+    eventId:    number,
     ticketId:   number,
     owner:      string,
-    signerKeys: Keypair,
+    signFn:     SignFunction,
   ): Promise<string> {
     const operation = this.contract.call(
       "check_in",
+      nativeToScVal(eventId,  { type: "u32"     }),
       nativeToScVal(ticketId, { type: "u32"     }),
       nativeToScVal(owner,    { type: "address" }),
     );
 
-    return this._signAndSubmit(operation, signerKeys);
-  }
-
-  // ── Private helpers ────────────────────────────────────────────────────────
-
-  private async _buildTx(operation: xdr.Operation): Promise<any> {
-    // A dummy keypair is fine for simulation-only calls.
-    const dummyKeypair = Keypair.random();
-    const account      = await this.server.getAccount(dummyKeypair.publicKey()).catch(
-      () => ({ id: dummyKeypair.publicKey(), sequence: "0" }),
-    );
-
-    return new TransactionBuilder(account as any, {
-      fee:               BASE_FEE,
-      networkPassphrase: this.networkPassphrase,
-    })
-      .addOperation(operation)
-      .setTimeout(30)
-      .build();
+    return this._signAndSubmit(operation, owner, signFn);
   }
 
   private async _signAndSubmit(
-    operation:  xdr.Operation,
-    signerKeys: Keypair,
+    operation: xdr.Operation,
+    publicKey: string,
+    signFn:    SignFunction,
   ): Promise<string> {
-    const account = await this.server.getAccount(signerKeys.publicKey());
+    const account = await this.server.getAccount(publicKey).catch(() => null);
+    if (!account) {
+      throw new Error("Account not found on the network. Is it funded?");
+    }
 
     let tx = new TransactionBuilder(account, {
       fee:               BASE_FEE,
@@ -186,22 +249,20 @@ export class ContractClient {
       .setTimeout(30)
       .build();
 
-    // Simulate to get the Soroban footprint / auth.
     const simResult = await this.server.simulateTransaction(tx);
     if (SorobanRpc.Api.isSimulationError(simResult)) {
       throw new Error(`Simulation failed: ${simResult.error}`);
     }
 
-    // Assemble (injects footprint + auth entries) and sign.
     const assembled = SorobanRpc.assembleTransaction(tx, simResult).build();
-    assembled.sign(signerKeys);
+    const signedXdr = await signFn(assembled.toXDR());
+    const signedTx  = new Transaction(signedXdr, this.networkPassphrase);
 
-    const sendResult = await this.server.sendTransaction(assembled);
+    const sendResult = await this.server.sendTransaction(signedTx);
     if (sendResult.status === "ERROR") {
       throw new Error(`Submission failed: ${JSON.stringify(sendResult.errorResult)}`);
     }
 
-    // Poll until final status.
     let getResult = await this.server.getTransaction(sendResult.hash);
     while (getResult.status === SorobanRpc.Api.GetTransactionStatus.NOT_FOUND) {
       await new Promise(r => setTimeout(r, 1_000));

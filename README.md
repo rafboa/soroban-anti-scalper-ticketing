@@ -1,239 +1,192 @@
-# StellarPass: Anti-Scalper Ticketing System
+# StellarPass 🎟️
 
-> A decentralized platform on Stellar that makes ticket scalping **mathematically impossible** using Soroban smart contracts.
+> **Fair tickets, on-chain. No scalpers. No bots. No fraud.**  
+> A decentralized ticketing factory built on **Stellar Soroban** that makes ticket scalping, bot hoarding, and counterfeit transfers mathematically impossible.
 
-[![Build](https://img.shields.io/badge/build-passing-brightgreen)](.)
-[![Rust](https://img.shields.io/badge/rust-1.78%2B-orange)](https://www.rust-lang.org)
-[![Network](https://img.shields.io/badge/network-Stellar%20Testnet-blue)](https://stellar.org)
-[![License](https://img.shields.io/badge/license-MIT-lightgrey)](./LICENSE)
-
----
-
-## Overview
-
-StellarPass replaces static QR codes and PDFs with **smart-contract-governed ticket tokens** on the Stellar network. Every ticket is a ledger entry — not an image that can be screenshotted or a file that can be duplicated. Ownership, resale rights, and entry validation are all enforced cryptographically at the protocol level.
+[![Rust](https://img.shields.io/badge/Rust-1.78%2B-orange?logo=rust)](https://www.rust-lang.org)
+[![Soroban](https://img.shields.io/badge/Soroban-Smart%20Contracts-7B42BC)](https://stellar.org)
+[![Next.js](https://img.shields.io/badge/Next.js-16%20(Turbopack)-black?logo=next.js)](https://nextjs.org)
+[![Stellar](https://img.shields.io/badge/Network-Stellar%20Testnet-08B5E5?logo=stellar)](https://stellar.org)
+[![License](https://img.shields.io/badge/License-MIT-green)](./LICENSE)
 
 ---
 
-## Project Vision
+## 💡 What is StellarPass?
 
-The live music and events industry loses billions every year to ticket scalping. Fans pay 3–10× face value. Artists and organisers see none of that money. Existing "anti-scalp" policies are enforced by humans and routinely circumvented by bots.
+The live entertainment and sports industries lose billions each year to bot syndicates and secondary ticket gouging. Fans pay 3–10× face value, artists and event organizers receive none of the markup, and duplicate-ticket fraud remains pervasive.
 
-StellarPass's vision is to make scalping **not a policy problem but a physics problem** — something the math of the blockchain makes impossible, not just against the rules.
+**StellarPass replaces vulnerable static QR codes and PDFs with smart-contract-governed ticket tokens.** 
 
-- **For fans**: guaranteed access to tickets at fair prices, with no fear of fraudulent or duplicated tickets
-- **For artists and organisers**: automated royalty income on every secondary sale, instant settlement, no intermediaries
-- **For the industry**: a trustless ticketing layer that any event platform can build on top of, without relying on centralised gatekeepers
-- **Long term**: a world where your ticket lives in your wallet alongside your identity — transferable, verifiable, and always fairly priced, whether you're attending a local gig or a global stadium tour
+Every ticket is an immutable, verifiable ledger record on Stellar. Resale price ceilings, attendee holding limits, anti-bot cooldowns, and cryptographic gate entry are enforced directly by smart contract code—not by discretionary human policies or bypassable CAPTCHAs.
 
 ---
 
-## Key Features
+## ✨ Key Features
 
-### 1. On-Chain Price Caps
-Resale prices are capped at **Face Value + 10%** by the contract itself. The formula:
-
-```
-max_resale_price = face_value × 110 / 100
-```
-
-Any transfer attempt exceeding this ceiling is **rejected before a single token moves**. There is no human in the loop and no policy to circumvent.
-
-### 2. Automated Royalties
-Every secondary sale triggers an **instant 5% royalty** (500 basis points) routed directly to the event organiser's wallet — atomically, within the same transaction as the sale itself.
-
-### 3. Dynamic Verification
-Gate entry requires the ticket holder to **co-sign the check-in transaction** with their private key. Screenshots and printouts are cryptographically worthless. Once scanned, the ticket is permanently locked on-chain.
+| Feature | How It Works |
+|---|---|
+| **🛡️ Hard Resale Price Cap** | The smart contract strictly enforces `max_allowed = face_value × 110%`. Resale attempts above the ceiling automatically revert. |
+| **🤖 Anti-Hoarding Rate Limiter** | Caps the maximum tickets a single wallet can acquire per event (`max_tickets_per_wallet`), preventing scalper bots from cornering inventory. |
+| **⏱️ Anti-Flipping Cooldown** | Enforces a minimum cooldown period (`transfer_cooldown_seconds`) between ticket resales to stop high-frequency arbitrage bots. |
+| **💰 Automated Organizer Royalties** | Secondary sales atomically split proceeds: organizers receive their configured royalty (up to 50%) instantly in the same transaction. |
+| **🔒 Payment Token Verification** | Events bind their official payment token (e.g. USDC). Transfers with counterfeit tokens are automatically rejected. |
+| **🎫 Dynamic Gate Check-In** | Dynamic QR codes expire every 60 seconds and require wallet signature verification. Screenshots and printouts are useless. |
+| **🏭 Multi-Event Factory** | A single contract deployment can create and manage thousands of independent events. |
+| **🚨 Emergency Circuit Breaker** | Organizers can instantly pause an event's operations in case of venue emergencies or suspected attacks. |
 
 ---
 
-## Deployed Contract
+## 📁 Repository Structure
 
-| Network  | Contract ID                      |
-|----------|----------------------------------|
-| Testnet  | `CD642DOEAS62BGI7XMONDXLX5XSSKM6GPBJK22EO3RSHFW5UNW4VA6BA` |
-| Mainnet  | `[Not yet deployed]`             |
-
-**Testnet links:**
-- [View on Stellar Expert](https://stellar.expert/explorer/testnet/contract/CD642DOEAS62BGI7XMONDXLX5XSSKM6GPBJK22EO3RSHFW5UNW4VA6BA)
-- [Open in Stellar Lab](https://lab.stellar.org/r/testnet/contract/CD642DOEAS62BGI7XMONDXLX5XSSKM6GPBJK22EO3RSHFW5UNW4VA6BA)
-
-**Wasm hash:** `3e5d8721f15f235d7200b2ae680760ddb6018d4ba4a62bb422d25e46ae8e39f0`
-
-### Contract Configuration
-
-| Parameter              | Value                                                        |
-|------------------------|--------------------------------------------------------------|
-| Admin / Royalty Wallet | `GAG27SIQ3K3P7F46UNNSQUX5LSVRHRWEPVQS2CSKNBY73VBPACEVAIGI` |
-| Face Value             | 100 stroops                                                  |
-| Max Resale Multiplier  | 110% of face value (ceiling = 110 stroops)                   |
-| Royalty                | 5% (500 basis points) per secondary sale                     |
-| Network                | Stellar Testnet                                              |
-
-- [View Admin Account on Stellar Expert](https://stellar.expert/explorer/testnet/account/GAG27SIQ3K3P7F46UNNSQUX5LSVRHRWEPVQS2CSKNBY73VBPACEVAIGI)
-
----
-
-## Project Structure
-
-```
-.
-├── contracts
-│   └── ticketing
-│       ├── src
-│       │   ├── lib.rs        ← Core contract logic & price enforcement
-│       │   └── test.rs       ← Full unit test suite
-│       └── Cargo.toml        ← Contract crate manifest
-├── frontend                  ← Next.js / React interface
-│   ├── src
-│   │   ├── app               ← Next.js App Router pages
-│   │   ├── components        ← UI components (Gallery, Resale, CheckIn)
-│   │   └── lib               ← ContractClient & wallet utilities
-│   └── package.json
-├── Cargo.toml                ← Workspace configuration
-└── README.md
+```text
+├── contracts/ticketing/      # Soroban Smart Contract (Rust)
+│   ├── src/lib.rs            # Factory contract, rate limits, and transfer logic
+│   └── src/test.rs           # 18 comprehensive unit tests
+├── frontend/                 # Next.js Web Application
+│   ├── src/app/              # Next.js App Router (pages & global styling)
+│   ├── src/components/       # UI Components (TicketGallery, ResalePortal, CheckInQR)
+│   └── src/lib/              # Soroban ContractClient & Freighter wallet hook
+├── Cargo.toml                # Rust workspace configuration
+└── README.md                 # Public documentation
 ```
 
 ---
 
-## Getting Started
+## 🚀 Quick Start Guide
 
 ### Prerequisites
+- [Rust](https://www.rust-lang.org/tools/install) (stable ≥ 1.78)
+- `wasm32-unknown-unknown` target (`rustup target add wasm32-unknown-unknown`)
+- [Node.js](https://nodejs.org) (v18+)
+- [Soroban CLI](https://developers.stellar.org/docs/build/smart-contracts/getting-started/setup) (`cargo install --locked soroban-cli`)
+- [Freighter Wallet](https://www.freighter.app/) browser extension
 
-| Tool | Version |
-|------|---------|
-| Rust | stable ≥ 1.78 |
-| `wasm32-unknown-unknown` target | via `rustup` |
-| Soroban CLI | ≥ 21.x |
-| Node.js | ≥ 18.x |
+---
 
-### Setup
+### 1. Test & Build the Smart Contract
 
-```bash
-# 1. Rust WASM target
-rustup target add wasm32-unknown-unknown
-
-# 2. Soroban CLI
-cargo install --locked soroban-cli
-
-# 3. Frontend dependencies
-cd frontend && npm install
-```
-
-### Run Tests
+Clone the repository and run the test suite:
 
 ```bash
-# From the workspace root
+# Run all 18 smart contract tests
 cargo test
 ```
 
-### Build Contract
+Build the optimized WebAssembly binary:
 
 ```bash
 cargo build --target wasm32-unknown-unknown --release
-
-soroban contract optimize \
-  --wasm target/wasm32-unknown-unknown/release/stellarpass_ticketing.wasm
 ```
 
-### Deploy to Testnet
+The compiled contract binary will be generated at:  
+`target/wasm32-unknown-unknown/release/stellarpass_ticketing.wasm`
+
+---
+
+### 2. Deploy to Stellar Testnet (Optional)
+
+Deploy the compiled Wasm binary to Stellar Testnet:
 
 ```bash
 soroban contract deploy \
-  --wasm target/wasm32-unknown-unknown/release/stellarpass_ticketing.optimized.wasm \
-  --source <YOUR_SECRET_KEY> \
+  --wasm target/wasm32-unknown-unknown/release/stellarpass_ticketing.wasm \
+  --source <YOUR_STELLAR_SECRET_KEY> \
   --network testnet
 ```
 
-### Initialize
+Initialize your event using the factory contract:
 
 ```bash
 soroban contract invoke \
-  --id <CONTRACT_ID> \
-  --source <ADMIN_SECRET_KEY> \
+  --id <YOUR_CONTRACT_ID> \
+  --source <YOUR_STELLAR_SECRET_KEY> \
   --network testnet \
-  -- initialize \
-  --admin <ADMIN_ADDRESS> \
+  -- create_event \
+  --event_id 1 \
+  --admin <YOUR_ADMIN_PUBLIC_KEY> \
+  --payment_token <PAYMENT_TOKEN_CONTRACT_ID> \
   --face_value 100 \
   --max_resale_multiplier 110 \
   --royalty_basis_points 500 \
-  --royalty_recipient <ROYALTY_ADDRESS>
+  --royalty_recipient <YOUR_ROYALTY_WALLET> \
+  --max_supply 1000 \
+  --max_tickets_per_wallet 4 \
+  --transfer_cooldown_seconds 60
 ```
 
 ---
 
-## Contract API
+### 3. Launch the Frontend DApp
 
-| Function | Signer | Permission | Description |
-|----------|--------|------------|-------------|
-| `initialize(admin, face_value, max_resale_multiplier, royalty_basis_points, royalty_recipient)` | Admin | One-time only | Set up event config |
-| `mint_ticket(ticket_id, to)` | Admin | Admin only | Issue a new ticket token |
-| `transfer_ticket(ticket_id, from, to, amount, token_addr)` | Seller | Owner of ticket | Transfer with price cap + royalty split |
-| `check_in(ticket_id, owner)` | Ticket holder | Owner of ticket | Mark used at the gate — permanent |
-| `get_ticket(ticket_id)` | — | Public | Read-only state query |
+1. Navigate to the frontend directory:
+   ```bash
+   cd frontend
+   npm install
+   ```
 
----
+2. Set up your local environment file:
+   ```bash
+   cp .env.example .env.local
+   ```
+   Open `.env.local` and add your deployed contract and token IDs.
 
-## Security Model
+3. Start the Next.js development server:
+   ```bash
+   npm run dev
+   ```
 
-| Threat | On-Chain Mitigation |
-|--------|---------------------|
-| Scalping / price gouging | Ceiling enforced in contract; over-limit transfers revert |
-| Screenshot / printout fraud | Check-in requires holder's cryptographic signature |
-| Malicious third-party check-in | `owner.require_auth()` on `check_in` |
-| Re-entry with used ticket | `is_used = true` permanently blocks all further operations |
-| Double-initialization | `AlreadyInitialized` guard on `initialize` |
-| Integer overflow | `checked_mul` / `checked_div` on all price maths |
+4. Open [http://localhost:3000](http://localhost:3000) in your browser, connect Freighter on Testnet, and start managing tickets!
 
 ---
 
-## Test Coverage
+## 📖 Smart Contract API
 
-The contract includes 7 hermetic unit tests using `soroban-sdk`'s mock environment — no live network required:
-
-| # | Test | Validates |
-|---|------|-----------|
-| 1 | `test_secondary_transfer_legal_price_succeeds` | Correct balance splits for buyer, seller, and royalty wallet after a legal secondary sale |
-| 2 | `test_scalper_blocked_price_above_ceiling` | Contract panics when resale price exceeds the 110% ceiling |
-| 3 | `test_check_in_marks_ticket_as_used` | `is_used` is permanently set to `true` after gate scan |
-| 4 | `test_used_ticket_cannot_be_transferred` | Transfer of a used ticket is rejected |
-| 5 | `test_used_ticket_cannot_be_checked_in_again` | Double check-in on the same ticket is rejected |
-| 6 | `test_double_initialize_panics` | Contract cannot be initialized a second time |
-| 7 | `test_non_owner_cannot_transfer` / `test_duplicate_mint_panics` / `test_get_ticket_returns_none` | Edge cases: wrong owner, duplicate mint, unknown ticket ID |
-
----
-
-## Future Scope
-
-### Short-Term
-
-1. **Event Metadata**: Add title, venue, date, and seat number fields to each ticket record
-2. **Batch Minting**: Allow the admin to mint multiple tickets in a single transaction for efficiency
-3. **Configurable Royalty per Event**: Support different royalty rates for different event types
-4. **Ticket Expiry**: Auto-invalidate tickets after the event date using Soroban's ledger timestamp
-
-### Medium-Term
-
-5. **Multi-Event Support**: Deploy a single factory contract that manages multiple events independently
-6. **Whitelist / KYC**: Restrict ticket purchases to pre-approved wallet addresses for high-demand events
-7. **Refund Mechanism**: Allow the admin to trigger refunds before an event, returning tokens to buyers
-8. **On-Chain Event Log**: Emit contract events for every mint, transfer, and check-in for real-time indexing
-
-### Long-Term
-
-9. **Frontend DApp**: Complete the Next.js interface with Freighter wallet integration, ticket gallery, and resale portal
-10. **Mobile Wallet SDK**: Native iOS and Android SDKs so attendees can store and present tickets from their phone
-11. **Cross-Contract Composability**: Allow DeFi protocols to use ticket ownership as collateral or for governance
-12. **Zero-Knowledge Check-In**: Private gate entry where the holder proves ownership without revealing their wallet address
-13. **DAO Governance**: Let ticket holders vote on event decisions (setlist, venue, charity donations) proportional to tickets held
-14. **Mainnet Launch**: Deploy to Stellar mainnet with a real payment token (USDC or XLM) and partner with an event organiser
+| Function | Access | Description |
+|---|---|---|
+| `create_event(...)` | Admin | Creates a new event with custom pricing, capacity, and rate limits |
+| `mint_ticket(...)` | Admin | Mints an individual ticket with title, venue, date, and seat metadata |
+| `batch_mint_tickets(...)` | Admin | Efficiently mints a batch of tickets in a single transaction |
+| `transfer_ticket(...)` | Buyer & Seller | Dual-auth atomic transfer enforcing price caps, quotas, and cooldowns |
+| `check_in(...)` | Ticket Holder | Validates and permanently marks ticket as used at gate entry |
+| `refund_ticket(...)` | Admin | Returns face value to the ticket owner and invalidates the ticket |
+| `set_paused(...)` | Admin | Circuit breaker to freeze or resume event operations |
+| `set_whitelist_enabled(...)` | Admin | Enables or disables KYC/whitelist requirement for purchases |
+| `add_to_whitelist(...)` | Admin | Adds an approved wallet address to the event whitelist |
+| `get_ticket(...)` | Public | Fetches on-chain ticket status, ownership, and metadata |
+| `get_event(...)` | Public | Fetches event configuration, pricing, and supply metrics |
+| `get_user_ticket_balance(...)` | Public | Returns the number of tickets held by a wallet for quota checks |
 
 ---
 
-## License
+## 🧪 Unit Test Coverage
 
-MIT — see [LICENSE](./LICENSE).
+StellarPass includes **18 unit tests** validating protocol security and edge cases:
+
+* ✅ Legal secondary transfer with automatic royalty distribution
+* ✅ Rejection of scalper price gouging above ceiling (reverts)
+* ✅ Gate entry validation and permanent one-time usage lock
+* ✅ Rejection of transfers on used tickets (reverts)
+* ✅ Prevention of duplicate event initialization (reverts)
+* ✅ Automatic invalidation of expired tickets based on ledger timestamp (reverts)
+* ✅ Anti-hoarding quota enforcement (`max_tickets_per_wallet`) (reverts)
+* ✅ Anti-flipping velocity cooldown enforcement (reverts)
+* ✅ Successful transfer after cooldown expires
+* ✅ Prevention of payment token spoofing (reverts)
+* ✅ Hard supply ceiling enforcement (`max_supply`) (reverts)
+* ✅ Emergency circuit breaker freeze (`set_paused`) (reverts)
+* ✅ Organizer refund mechanism with balance tracking
+* ✅ Rejection of transfers on refunded tickets (reverts)
+* ✅ Multi-ticket batch minting functionality
+* ✅ Whitelist restriction enforcement (reverts)
+* ✅ Whitelist successful authorization
+* ✅ Parameter validation guardrails on event creation (reverts)
 
 ---
 
-**StellarPass** — Fair Tickets, On-Chain. No Bots. No Fraud. No Excuses. 🎟️✦
+## 📄 License
+
+This project is open-source under the [MIT License](./LICENSE).
+
+---
+
+**StellarPass** — Built on Stellar. Fair by design. ✦

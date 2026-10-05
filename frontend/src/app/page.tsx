@@ -1,54 +1,48 @@
-/**
- * StellarPass — Root Application Page
- * ────────────────────────────────────
- * Composes the three main UI sections:
- *   1. TicketGallery  — owned tickets
- *   2. ResalePortal   — transfer / sell
- *   3. CheckInQR      — gate entry QR
- */
-
 "use client";
 
 import { useState } from "react";
 import { useWallet } from "@/lib/useWallet";
 import { ContractClient } from "@/lib/contractclient";
 import TicketGallery from "@/components/ticketgallery";
-import ResalePortal from "@/components/resaleportal";
 import CheckInQR from "@/components/checkinportal";
-import { Keypair } from "@stellar/stellar-sdk";
+import ResalePortal from "@/components/resaleportal";
 
-// ── Environment config (set in .env.local) ─────────────────────────────────
-
-const CONTRACT_ID    = process.env.NEXT_PUBLIC_CONTRACT_ID    ?? "[Insert Deployed Testnet ID Here]";
-const TOKEN_ADDRESS  = process.env.NEXT_PUBLIC_TOKEN_ADDRESS  ?? "";
-const NETWORK        = (process.env.NEXT_PUBLIC_NETWORK as "testnet" | "mainnet") ?? "testnet";
+const CONTRACT_ID   = process.env.NEXT_PUBLIC_CONTRACT_ID   ?? "[Insert Deployed Testnet ID Here]";
+const NETWORK       = (process.env.NEXT_PUBLIC_NETWORK as "testnet" | "mainnet") ?? "testnet";
+const DEV_WALLET    = process.env.NEXT_PUBLIC_DEV_WALLET    ?? "";
+const TOKEN_ADDRESS = process.env.NEXT_PUBLIC_TOKEN_ADDRESS ?? "";
 
 const contractClient = ContractClient.forNetwork(CONTRACT_ID, NETWORK);
-
-// ── Tabs ──────────────────────────────────────────────────────────────────
 
 type Tab = "gallery" | "resale" | "checkin";
 
 export default function HomePage() {
-  const wallet       = useWallet();
+  const wallet        = useWallet();
   const [tab, setTab] = useState<Tab>("gallery");
 
-  // In a real app the signer keypair comes from Freighter via signTransaction.
-  // For local dev you can paste a testnet secret into .env.local.
-  const devKeypair = process.env.NEXT_PUBLIC_DEV_SECRET
-    ? Keypair.fromSecret(process.env.NEXT_PUBLIC_DEV_SECRET)
-    : null;
+  const isDevMode   = !!DEV_WALLET;
+  const activeKey   = isDevMode ? DEV_WALLET : wallet.publicKey;
+  const isConnected = isDevMode ? true       : wallet.isConnected;
+
+  const devSign = async (xdr: string) => xdr;
+  const signFn  = isDevMode ? devSign : wallet.signTransaction;
 
   return (
     <main className="app">
-      {/* ── Header ────────────────────────────────────────────────────── */}
       <header className="app-header">
         <div className="logo">
-          <span className="logo-star">✦</span>
+          <span className="logo-star" aria-hidden="true">✦</span>
           <span className="logo-text">StellarPass</span>
         </div>
 
-        {wallet.isConnected ? (
+        {isDevMode ? (
+          <div className="wallet-badge">
+            <span className="dev-badge">DEV MODE</span>
+            <span className="wallet-addr">
+              {DEV_WALLET.slice(0, 6)}…{DEV_WALLET.slice(-4)}
+            </span>
+          </div>
+        ) : isConnected ? (
           <div className="wallet-badge">
             <span className="wallet-addr">
               {wallet.publicKey!.slice(0, 6)}…{wallet.publicKey!.slice(-4)}
@@ -68,15 +62,20 @@ export default function HomePage() {
         )}
       </header>
 
-      {/* ── Wallet error ──────────────────────────────────────────────── */}
-      {wallet.error && (
+      {isDevMode && (
+        <div className="notice" style={{ marginBottom: "1.5rem" }}>
+          Running in dev mode with wallet <code>{DEV_WALLET.slice(0, 6)}…{DEV_WALLET.slice(-4)}</code>.
+          Remove <code>NEXT_PUBLIC_DEV_WALLET</code> from <code>.env.local</code> to use Freighter.
+        </div>
+      )}
+
+      {!isDevMode && wallet.error && (
         <div className="wallet-error" role="alert">
           {wallet.error}
         </div>
       )}
 
-      {/* ── Connect prompt ────────────────────────────────────────────── */}
-      {!wallet.isConnected && !wallet.error && (
+      {!isConnected && !wallet.error && !isDevMode && (
         <section className="connect-prompt">
           <h1>Fair tickets, on-chain.</h1>
           <p>
@@ -86,53 +85,53 @@ export default function HomePage() {
         </section>
       )}
 
-      {/* ── Main content ──────────────────────────────────────────────── */}
-      {wallet.isConnected && wallet.publicKey && (
+      {isConnected && activeKey && (
         <>
-          {/* Tab navigation */}
-          <nav className="tab-nav" aria-label="App sections">
-            {(["gallery", "resale", "checkin"] as Tab[]).map(t => (
-              <button
-                key={t}
-                className={`tab-btn ${tab === t ? "tab-btn--active" : ""}`}
-                onClick={() => setTab(t)}
-              >
-                {{ gallery: "🎟 My Tickets", resale: "💸 Resale", checkin: "📲 Check-In" }[t]}
-              </button>
-            ))}
+          <nav className="tab-nav" aria-label="Application sections" role="tablist">
+            {(["gallery", "resale", "checkin"] as Tab[]).map(t => {
+              const tabLabels: Record<Tab, string> = {
+                gallery: "My Tickets",
+                resale:  "Resale",
+                checkin: "Check-In",
+              };
+              const isSelected = tab === t;
+              return (
+                <button
+                  key={t}
+                  role="tab"
+                  aria-selected={isSelected}
+                  className={`tab-btn ${isSelected ? "tab-btn--active" : ""}`}
+                  onClick={() => setTab(t)}
+                >
+                  {tabLabels[t]}
+                </button>
+              );
+            })}
           </nav>
 
-          {/* Tab panels */}
-          <div className="tab-content">
+          <div className="tab-content" role="tabpanel">
             {tab === "gallery" && (
               <TicketGallery
-                publicKey={wallet.publicKey}
+                publicKey={activeKey}
                 client={contractClient}
               />
             )}
 
-            {tab === "resale" && devKeypair && (
+            {tab === "resale" && (
               <ResalePortal
-                sellerPublicKey={wallet.publicKey}
-                signerKeypair={devKeypair}
+                sellerPublicKey={activeKey}
+                signFn={signFn}
                 client={contractClient}
                 tokenAddress={TOKEN_ADDRESS}
               />
             )}
 
-            {tab === "resale" && !devKeypair && (
-              <div className="notice">
-                Set <code>NEXT_PUBLIC_DEV_SECRET</code> in <code>.env.local</code> to
-                enable transaction signing in dev mode. In production, this routes
-                through Freighter.
-              </div>
-            )}
-
             {tab === "checkin" && (
               <CheckInQR
+                eventId={1}
                 ticketId={1}
-                ownerPublicKey={wallet.publicKey}
-                signMessage={wallet.signTransaction}
+                ownerPublicKey={activeKey}
+                signMessage={signFn}
               />
             )}
           </div>
